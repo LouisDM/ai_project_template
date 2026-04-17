@@ -107,10 +107,17 @@ cp .env.example .env
 - 前端加依赖后，务必本地 `npm run build` 而不仅 `tsc --noEmit`（Docker 构建用的是 `npm run build`）
 - 部署前检查 `git status`，但**不需要**强制用户提交才能部署
 
-### 提交和部署
+### 可用的 Skill（按使用顺序）
 
-- `/commit` — 自动生成 Conventional Commits + 更新 `doc/CHANGELOG.md`
-- `/deploy` — 全流程部署，`--check` 仅查状态，`--rebuild` 强制重建容器
+| Skill | 用途 | 何时调用 |
+|-------|------|---------|
+| `/project-flow` | **全流程编排** — 需求 → 设计 → 开发 → 测试 → 部署 | 用户提新需求或新功能时（推荐默认走这条） |
+| `/commit` | 自动生成 Conventional Commits + 更新 `doc/CHANGELOG.md` | 代码写完、本地验证通过后 |
+| `/deploy` | 一键部署，`--check` 仅查状态，`--rebuild` 强制重建 | 提交之后上线 |
+| `/test-deploy` | 部署后冒烟测试（接口 + 页面） | 每次部署完成后 |
+
+**推荐工作流**：用户提需求 → `/project-flow` 顺序跑完整流程（内部会调用 `/commit`、`/deploy`、`/test-deploy`）。
+小改动或 bug 修复可以绕过 `/project-flow` 直接 `/commit` + `/deploy` + `/test-deploy`。
 
 ### 避免的反模式
 
