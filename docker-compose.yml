@@ -1,0 +1,23 @@
+version: "3.8"
+
+# Local development compose — postgres on 5433 to avoid local-port clash.
+# Backend/frontend run natively (uvicorn --reload / vite dev server) for fast iteration.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: app_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

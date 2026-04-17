@@ -1,0 +1,53 @@
+services:
+  frontend:
+    container_name: demo-frontend
+    build: ./frontend
+    ports:
+      - "9700:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    container_name: demo-backend
+    build: ./backend
+    ports:
+      - "8006:8000"
+    env_file:
+      - .env.docker
+    volumes:
+      - app_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  postgres:
+    container_name: demo-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeThisPassword}
+    volumes:
+      - app_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+networks:
+  # 显式命名网络，和 deploy.py 里的 DOCKER_NETWORK 常量保持一致。
+  # deploy.py 首次部署后会自动把 gateway-nginx 接入此网络，实现域名反代。
+  default:
+    name: demo_net

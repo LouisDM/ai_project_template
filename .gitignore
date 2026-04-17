@@ -1,0 +1,31 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+test.db
+uploads/
+.env
+.env.docker
+.env.docker.prod
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+
+# SSH keys — NEVER commit, but keep the ssh/ README for new users
+ssh/*
+!ssh/README.md
+!ssh/.gitkeep
+*.pem
+*-key
+*_rsa
+*_ed25519
+id_*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
