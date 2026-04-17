@@ -6,7 +6,7 @@ user_invocable: true
 
 # /deploy — 一键部署到 EC2
 
-当用户输入 `/deploy` 时执行以下流程，将当前项目部署到 EC2 服务器（**SSH 直连 + gateway-nginx 自动反代**）。
+当用户输入 `/deploy` 时执行以下流程，将当前项目部署到 EC2 服务器（**SSH 直连 + gateway-nginx HTTPS 反代**）。
 
 ## 默认 demo 测试槽位
 
@@ -18,10 +18,12 @@ user_invocable: true
 | 前端直连 | http://cms.premom.tech:9700 |
 | 后端直连 | http://cms.premom.tech:8006 |
 | 容器名 | `demo-frontend` / `demo-backend` / `demo-postgres` |
-| Docker 网络 | `demo_net` |
 | 部署路径 | `/home/ec2-user/demo` |
+| 反代原理 | gateway-nginx 把 `demo.premom.tech` 反代到 `172.17.0.1:9700`（Docker 网桥 + 宿主端口） |
 
-> **注意：demo 槽位是共享的测试环境 — 整个团队只能同时部署一个 demo 项目。** 正式项目需要自己的域名+端口（见下方「独立部署配置」）。
+> **关键约束**：前端容器必须把 `9700:80` 映射到宿主。只要 `docker-compose.prod.yml` 的 `ports` 保留 `"9700:80"`，域名就通。
+>
+> **注意**：demo 槽位是共享的测试环境 — 整个团队只能同时部署一个 demo 项目。正式项目需要自己的域名+端口（见下方「独立部署配置」）。
 
 ## 服务器连接
 
@@ -61,8 +63,7 @@ cd <project_root> && python deploy.py -y
 1. 打包项目文件（排除 node_modules/.git/uploads 等）
 2. SFTP 上传到 EC2
 3. 解压 + `docker compose up -d --build`
-4. **把 gateway-nginx 接入 demo_net 网络**（首次部署后域名才通）
-5. 验证 `/health` + 前端状态
+4. 验证 `/health` + 前端状态（域名直接通，无需额外网络配置）
 
 ### Step 3: 参数处理
 
@@ -109,17 +110,15 @@ curl -sf --max-time 10 http://cms.premom.tech:8006/health
    PUBLIC_DOMAIN = "myapp.premom.tech"     # 或你自己的域名
    FRONTEND_PORT = 9701                    # 服务器上必须未被占用
    BACKEND_PORT = 8007
-   DOCKER_NETWORK = f"{PROJECT_NAME}_net"  # 自动跟随 PROJECT_NAME
    ```
 
 2. **改 `docker-compose.prod.yml`**：
    - `container_name: myapp-frontend` / `myapp-backend` / `myapp-postgres`
    - `ports: "9701:80"` / `"8007:8000"`
-   - `networks.default.name: myapp_net`
 
 3. **域名 DNS**：在 DNS 服务商加 A 记录 `<你的域名>` → `16.146.108.197`
 
-4. **服务器 nginx**：需要管理员登陆服务器加一份 `conf.d/<你的域名>.conf`（参考 `/opt/gateway/nginx/conf.d/demo.premom.tech.conf`，把 `demo-frontend` 改成你的容器名）
+4. **服务器 nginx**：请管理员登录 EC2 加一份 `/opt/gateway/nginx/conf.d/<你的域名>.conf`，参考 `demo.premom.tech.conf`，把 `proxy_pass http://172.17.0.1:9700;` 里的端口改成你的 `FRONTEND_PORT`。
 
 ## 错误处理
 
@@ -132,7 +131,7 @@ curl -sf --max-time 10 http://cms.premom.tech:8006/health
 | 构建失败（Python） | 检查 `requirements.txt` 依赖是否齐全 |
 | 磁盘不足 | 建议运行 `docker image prune -f` |
 | 前端 unhealthy | 等待更久或查看 `docker logs demo-frontend` |
-| `demo.premom.tech` 返回 502 | 通常是 gateway-nginx 没接入 demo_net — deploy.py 会自动接入，或手动：`sudo docker network connect demo_net gateway-nginx` |
+| `demo.premom.tech` 返回 502 | 检查前端容器是否跑起来且把 `9700:80` 暴露到宿主：`sudo docker ps \| grep demo-frontend` 应该看到 `0.0.0.0:9700->80/tcp` |
 | 端口撞车（9700/8006 被占用） | 改 `deploy.py` 和 `docker-compose.prod.yml` 的端口 + 走「独立部署」路径 |
 
 ## 重要提醒

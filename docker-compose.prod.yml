@@ -46,8 +46,9 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-networks:
-  # 显式命名网络，和 deploy.py 里的 DOCKER_NETWORK 常量保持一致。
-  # deploy.py 首次部署后会自动把 gateway-nginx 接入此网络，实现域名反代。
-  default:
-    name: demo_net
+volumes:
+  app_pg_data:
+  app_uploads:
+
+# gateway-nginx 通过 172.17.0.1:9700（宿主 Docker 网桥）反代到前端容器，
+# 不依赖 Docker 网络互通 — 只要 frontend 服务把 "9700:80" 暴露到宿主即可。

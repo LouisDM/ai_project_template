@@ -27,15 +27,19 @@ import paramiko
 # ── 项目配置 ────────────────────────────────────────────
 # 默认发布到共享的 demo 测试环境：
 #   - 域名:   https://demo.premom.tech/（已配好 nginx + 泛域名证书）
-#   - 端口:   9700 前端 / 8006 后端
+#   - 端口:   9700 前端 / 8006 后端（gateway-nginx 直接反代到宿主 9700）
 #   - 容器名: demo-frontend / demo-backend / demo-postgres
 #
+# 关键约束：前端容器必须把端口映射成 9700:80 到宿主，gateway-nginx 通过
+# 172.17.0.1:9700 反代，不依赖 Docker 网络互通。
+#
 # 想部署到独立环境时，把下面几个常量改成自己项目的值：
-#   PROJECT_NAME  → 唯一标识（影响容器名、部署目录、docker 网络名）
+#   PROJECT_NAME  → 唯一标识（影响容器名、部署目录）
 #   PUBLIC_DOMAIN → 你自己的域名（需在 DNS 先指向 EC2 公网 IP）
 #   FRONTEND_PORT / BACKEND_PORT → 在服务器上不冲突的端口
-# 改完以后记得同步改 docker-compose.prod.yml 里的 container_name 和 ports。
-PROJECT_NAME = "demo"                     # 容器名前缀、部署目录名、docker 网络名
+# 改完以后记得同步改 docker-compose.prod.yml 里的 container_name 和 ports，
+# 同时联系管理员在 EC2 上加一份 nginx 反代配置到新端口。
+PROJECT_NAME = "demo"                     # 容器名前缀、部署目录名
 PUBLIC_DOMAIN = "demo.premom.tech"        # 对外域名（gateway-nginx 会做 HTTPS 反代）
 EC2_HOST = "cms.premom.tech"              # EC2 SSH 目标
 EC2_USER = "ec2-user"
@@ -53,7 +57,6 @@ BACKEND_PORT = 8006
 DEPLOY_DIR = f"/home/ec2-user/{PROJECT_NAME}"
 PROJECT_DIR = Path(__file__).resolve().parent
 ARCHIVE_NAME = f"{PROJECT_NAME}-deploy.tar.gz"
-DOCKER_NETWORK = f"{PROJECT_NAME}_net"    # 对应 docker-compose.prod.yml 里 networks.default.name
 
 # 打包时排除
 EXCLUDES = {
@@ -188,12 +191,6 @@ def deploy_on_ec2(ec2: paramiko.SSHClient):
 
     log("等待服务启动 (15s)...")
     time.sleep(15)
-
-    # 让 gateway-nginx 能通过容器名访问 frontend（一次性，幂等）
-    run_remote(ec2,
-        f"sudo docker network connect {DOCKER_NETWORK} gateway-nginx 2>&1 | grep -v 'already exists' || true",
-        f"连接 gateway-nginx 到 {DOCKER_NETWORK}..."
-    )
 
     run_remote(ec2,
         f"cd {DEPLOY_DIR} && sudo docker compose -f docker-compose.prod.yml ps",
