@@ -33,7 +33,7 @@ user_invocable: true
 | SSH 密钥 | `<项目>/ssh/ai-team-key`（推荐），也支持 `D:\ssh\ai-team-key` 或 `AI_TEAM_SSH_KEY` 环境变量 |
 | 连接命令 | `ssh -i ./ssh/ai-team-key -o StrictHostKeyChecking=no ec2-user@cms.premom.tech` |
 
-**首次使用**：向团队管理员获取 `ai-team-key` 私钥，放到 `<项目>/ssh/ai-team-key`（`.gitignore` 已忽略该目录，不会提交）。
+**首次使用**：查阅 `doc/ai-team-setup.md`（资源 1 部分）联系 AI 部门获取 `ai-team-key` 私钥，放到 `<项目>/ssh/ai-team-key`（`.gitignore` 已忽略该目录，不会提交）。
 
 ## 参数支持
 
@@ -124,7 +124,7 @@ curl -sf --max-time 10 http://cms.premom.tech:8006/health
 
 | 错误 | 处理 |
 |------|------|
-| SSH 私钥找不到 | 提示用户向团队管理员获取 `ai-team-key`，放到项目根目录下的 `ssh/ai-team-key` |
+| SSH 私钥找不到 | 提示用户查阅 `doc/ai-team-setup.md`（资源 1 部分），联系 AI 部门获取 `ai-team-key`，放到项目根目录下的 `ssh/ai-team-key` |
 | 连接超时 / 拒绝 | 检查 `cms.premom.tech` 是否可达，安全组是否放行 22 端口 |
 | Docker 权限错误 | 命令前加 sudo |
 | 构建失败（TypeScript） | 本地跑 `cd frontend && npm run build` 复现并修复 |

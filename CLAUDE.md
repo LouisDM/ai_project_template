@@ -47,7 +47,7 @@
 2. **项目内 `./ssh/ai-team-key`（推荐）** — 已在 `.gitignore` 忽略
 3. `D:\ssh\ai-team-key`（旧位置）
 
-如果本地没有，提醒用户向团队管理员索取，放到 `<项目>/ssh/ai-team-key`。
+如果本地没有，提醒用户查阅 `doc/ai-team-setup.md`（「资源 1：SSH 部署密钥」部分），按文档说明联系 AI 部门索取，放到 `<项目>/ssh/ai-team-key`。
 
 **3. 初始化本地环境**
 
@@ -111,13 +111,19 @@ cp .env.example .env
 
 | Skill | 用途 | 何时调用 |
 |-------|------|---------|
-| `/project-flow` | **全流程编排** — 需求 → 设计 → 开发 → 测试 → 部署 | 用户提新需求或新功能时（推荐默认走这条） |
+| `/everything` | **非技术用户一站式入口** — 检查前置条件 + 需求 → 上线全自动 | **非技术用户首选**；或用户第一次使用时 |
+| `/project-flow` | **全流程编排（技术用户）** — 需求 → 设计 → 开发 → 测试 → 部署 | 技术用户提新需求或新功能时 |
+| `/evolve` | **Harness 自进化** — 提炼本次会话问题，更新 skill 文件，写进化日志 | 用户确认需求满意后自动触发（也可手动） |
 | `/commit` | 自动生成 Conventional Commits + 更新 `doc/CHANGELOG.md` | 代码写完、本地验证通过后 |
 | `/deploy` | 一键部署，`--check` 仅查状态，`--rebuild` 强制重建 | 提交之后上线 |
 | `/test-deploy` | 部署后冒烟测试（接口 + 页面） | 每次部署完成后 |
 
-**推荐工作流**：用户提需求 → `/project-flow` 顺序跑完整流程（内部会调用 `/commit`、`/deploy`、`/test-deploy`）。
-小改动或 bug 修复可以绕过 `/project-flow` 直接 `/commit` + `/deploy` + `/test-deploy`。
+**推荐工作流**：
+- **非技术用户**：直接 `/everything` + 描述需求，全自动完成
+- **技术用户**：`/project-flow` 顺序跑完整流程（内部会调用 `/commit`、`/deploy`、`/test-deploy`）
+- **小改动 / bug 修复**：直接 `/commit` + `/deploy` + `/test-deploy`
+
+**⚠️ 前置条件**：首次使用前，非技术用户请查阅 `doc/ai-team-setup.md`，了解需要从 AI 部门获取哪些资源（SSH 密钥、配置文件等）。`/everything` 会自动检查并提示。
 
 ### 避免的反模式
 
@@ -141,11 +147,12 @@ cp .env.example .env
 
 - `CLAUDE.md`（本文件）
 - `README.md` — 人类可读的项目说明
+- `doc/ai-team-setup.md` — **非技术用户必读**：AI 部门资源获取指南（SSH 密钥、API Key 等）
 - `deploy.py` — 部署入口（有详细注释）
 - `backend/app/main.py` — FastAPI 主入口
 - `backend/app/services/ai_client.py` — Claude SDK 封装的示范
 - `frontend/src/App.tsx` — 路由总表
 - `frontend/src/api/client.ts` — axios 配置
-- `.claude/skills/` — Claude Code 技能目录
+- `.claude/skills/` — Claude Code 技能目录（`/everything` 是非技术用户入口）
 
 当你不确定某个模式该怎么写，**先读这些文件**，保持风格一致。
