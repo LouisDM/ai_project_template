@@ -35,22 +35,23 @@ multica repo checkout <AI_PROJECT_TEMPLATE_REPO_URL>
 
 ### Step 3 — 就位部署配置
 
-项目需要以下两个文件才能部署，它们不在 git 里，从固定路径复制：
+项目需要以下文件才能部署，它不在 git 里，从固定路径复制：
 
 ```bash
-# SSH 部署密钥（deploy.py 也会自动读 AI_TEAM_SSH_KEY 环境变量，两者选一即可）
-mkdir -p ssh
-cp /Users/admin/Documents/ai_project/ai-team-file/ai-team-key ssh/ai-team-key
-chmod 600 ssh/ai-team-key
-
 # 生产环境配置（包含数据库密码等）
 cp /Users/admin/Documents/ai_project/ai-team-file/.env.docker.prod .env.docker.prod
 ```
 
-如果某个文件不存在，**立即停止**并通过 Issue 评论告知用户：
+同时确保 `SSH_PASSWORD` 环境变量已设置：
 
 ```bash
-multica issue comment add <ISSUE_ID> --content "⚠️ 部署配置缺失：找不到 ai-team-key 或 .env.docker.prod，请联系 AI 部门确认 /Users/admin/Documents/ai_project/ai-team-file/ 目录内容完整。"
+export SSH_PASSWORD="你的服务器密码"
+```
+
+如果 `.env.docker.prod` 不存在，**立即停止**并通过 Issue 评论告知用户：
+
+```bash
+multica issue comment add <ISSUE_ID> --content "⚠️ 部署配置缺失：找不到 .env.docker.prod，请联系 AI 部门确认 /Users/admin/Documents/ai_project/ai-team-file/ 目录内容完整。"
 multica issue status <ISSUE_ID> blocked
 ```
 

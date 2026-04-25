@@ -14,12 +14,12 @@ user_invocable: true
 
 | 项目 | 值 |
 |------|-----|
-| 对外域名 | **https://demo.premom.tech/**（HTTPS，泛域名证书） |
-| 前端直连 | http://cms.premom.tech:9700 |
-| 后端直连 | http://cms.premom.tech:8006 |
+| 对外域名 | **http://47.121.130.229:7005/** |
+| 前端直连 | http://47.121.130.229:7005 |
+| 后端直连 | http://47.121.130.229:7005 |
 | 容器名 | `demo-frontend` / `demo-backend` / `demo-postgres` |
 | 部署路径 | `/home/ec2-user/demo` |
-| 反代原理 | gateway-nginx 把 `demo.premom.tech` 反代到 `172.17.0.1:9700`（Docker 网桥 + 宿主端口） |
+| 反代原理 | nginx 把 `47.121.130.229:7005` 反代到前端容器 |
 
 > **关键约束**：前端容器必须把 `9700:80` 映射到宿主。只要 `docker-compose.prod.yml` 的 `ports` 保留 `"9700:80"`，域名就通。
 >
@@ -29,11 +29,12 @@ user_invocable: true
 
 | 项目 | 值 |
 |------|-----|
-| EC2 | `cms.premom.tech` (ec2-user) |
-| SSH 密钥 | `<项目>/ssh/ai-team-key`（推荐），也支持 `D:\ssh\ai-team-key` 或 `AI_TEAM_SSH_KEY` 环境变量 |
-| 连接命令 | `ssh -i ./ssh/ai-team-key -o StrictHostKeyChecking=no ec2-user@cms.premom.tech` |
+| 服务器 | `47.121.130.229` (root) |
+| 登录方式 | **密码登录**（root / 服务器密码） |
+| SSH 密钥 | 本服务器不使用密钥，使用密码 |
+| 连接命令 | `ssh -o StrictHostKeyChecking=no root@47.121.130.229` |
 
-**首次使用**：查阅 `doc/ai-team-setup.md`（资源 1 部分）联系 AI 部门获取 `ai-team-key` 私钥，放到 `<项目>/ssh/ai-team-key`（`.gitignore` 已忽略该目录，不会提交）。
+**首次使用**：确保 deploy.py 中的密码配置正确（`SSH_PASSWORD` 环境变量或代码中配置）。
 
 ## 参数支持
 
@@ -85,18 +86,18 @@ cd /home/ec2-user/demo && sudo docker compose -f docker-compose.prod.yml logs --
 ### Step 4: 验证
 
 ```bash
-curl -sf --max-time 10 https://demo.premom.tech/health
-curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://demo.premom.tech/
+curl -sf --max-time 10 http://47.121.130.229:7005/health
+curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" http://47.121.130.229:7005/
 # 直连验证
-curl -sf --max-time 10 http://cms.premom.tech:8006/health
+curl -sf --max-time 10 http://47.121.130.229:7005/health
 ```
 
 ### Step 5: 输出结果
 
 ```
 部署完成 ✓
-  域名: https://demo.premom.tech/ — HTTP 200
-  后端: http://cms.premom.tech:8006/health — healthy
+  地址: http://47.121.130.229:7005/ — HTTP 200
+  后端: http://47.121.130.229:7005/health — healthy
   耗时: ~2m30s
 ```
 
@@ -124,19 +125,19 @@ curl -sf --max-time 10 http://cms.premom.tech:8006/health
 
 | 错误 | 处理 |
 |------|------|
-| SSH 私钥找不到 | 提示用户查阅 `doc/ai-team-setup.md`（资源 1 部分），联系 AI 部门获取 `ai-team-key`，放到项目根目录下的 `ssh/ai-team-key` |
-| 连接超时 / 拒绝 | 检查 `cms.premom.tech` 是否可达，安全组是否放行 22 端口 |
+| SSH 密码未设置 | 设置环境变量 `export SSH_PASSWORD="你的密码"`，或修改 `deploy.py` 中的默认值 |
+| 连接超时 / 拒绝 | 检查 `47.121.130.229` 是否可达，安全组是否放行 22 端口 |
 | Docker 权限错误 | 命令前加 sudo |
 | 构建失败（TypeScript） | 本地跑 `cd frontend && npm run build` 复现并修复 |
 | 构建失败（Python） | 检查 `requirements.txt` 依赖是否齐全 |
 | 磁盘不足 | 建议运行 `docker image prune -f` |
 | 前端 unhealthy | 等待更久或查看 `docker logs demo-frontend` |
-| `demo.premom.tech` 返回 502 | 检查前端容器是否跑起来且把 `9700:80` 暴露到宿主：`sudo docker ps \| grep demo-frontend` 应该看到 `0.0.0.0:9700->80/tcp` |
-| 端口撞车（9700/8006 被占用） | 改 `deploy.py` 和 `docker-compose.prod.yml` 的端口 + 走「独立部署」路径 |
+| `47.121.130.229:7005` 返回 502 | 检查前端容器是否跑起来且把端口暴露到宿主：`sudo docker ps \| grep demo-frontend` |
+| 端口撞车（7005/8006 被占用） | 改 `deploy.py` 和 `docker-compose.prod.yml` 的端口 + 走「独立部署」路径 |
 
 ## 重要提醒
 
-- 不要把 `ai-team-key` 私钥提交到 git（已在 `.gitignore` 中忽略）
+- 不要把服务器密码提交到 git
 - `.env.docker.prod` 包含生产密钥，deploy.py 会自动复制为 `.env.docker`
 - 部署不会丢失数据库数据（PostgreSQL 使用 Docker volume）
 - **demo 槽位是单例** — 新部署会覆盖旧部署。团队协作时先对一下谁在用 demo

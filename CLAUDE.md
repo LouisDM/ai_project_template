@@ -39,15 +39,15 @@
 
 **建议**：改名时 `grep -r "demo\|app_db"` 扫一遍避免漏改。
 
-**2. 获取 SSH 部署密钥**（如需部署）
+**2. 配置 SSH 密码**（如需部署）
 
-部署依赖 `ai-team-key` 私钥。`deploy.py` 按以下优先级查找：
+部署使用密码登录。设置环境变量 `SSH_PASSWORD`：
 
-1. `AI_TEAM_SSH_KEY` 环境变量
-2. **项目内 `./ssh/ai-team-key`（推荐）** — 已在 `.gitignore` 忽略
-3. `D:\ssh\ai-team-key`（旧位置）
+```bash
+export SSH_PASSWORD="你的服务器密码"
+```
 
-如果本地没有，提醒用户查阅 `doc/ai-team-setup.md`（「资源 1：SSH 部署密钥」部分），按文档说明联系 AI 部门索取，放到 `<项目>/ssh/ai-team-key`。
+或在 `deploy.py` 中直接修改默认值（不推荐，易泄露）。
 
 **3. 初始化本地环境**
 
@@ -131,7 +131,7 @@ cp .env.example .env
 - ❌ 不要引入第二个 UI 库（已有 Antd 就够）
 - ❌ 不要在后端写 Python 里的 TypeScript 注释 `/* ... */`
 - ❌ 不要在没有 typecheck 通过的情况下 deploy — Dockerfile 里会失败
-- ❌ 不要把 `ai-team-key` 私钥提交到 git
+- ❌ 不要把服务器密码提交到 git
 
 ## 常见场景速查
 
@@ -140,7 +140,7 @@ cp .env.example .env
 | 加新表 | models.py 加类 → schemas.py 加 Out/Create → routers/xxx.py 加路由 → main.py 注册 → entrypoint.sh 迁移 |
 | 加新前端页面 | pages/XxxPage.tsx → App.tsx 加 Route → AppLayout.tsx 加菜单项 |
 | 本地启动 | 3 个终端：`docker compose up db`、`cd backend && uvicorn app.main:app --reload`、`cd frontend && npm run dev` |
-| 线上调试 | `ssh -i D:\ssh\ai-team-key ec2-user@<host>`，然后 `sudo docker logs -f <container>` |
+| 线上调试 | `ssh root@47.121.130.229`，然后 `sudo docker logs -f <container>` |
 | 修改表结构 | 优先写 `ALTER TABLE IF NOT EXISTS` 加到 entrypoint.sh；破坏性变更给清楚的回滚说明 |
 
 ## 核心文件索引

@@ -1,27 +1,23 @@
-# SSH 密钥目录
+# SSH 配置目录
 
-把 `ai-team-key` 私钥放到这个目录下（本目录已在 `.gitignore` 忽略）：
+本目录原用于存放 SSH 私钥，现已改为**密码登录**模式，不再需要密钥文件。
 
-```
-ssh/
-├── README.md         (本文件，可提交)
-└── ai-team-key       (私钥，不要提交)
-```
+## 部署方式
 
-## 获取密钥
+`deploy.py` 使用密码登录服务器：
 
-向团队管理员索取 `ai-team-key`，它是登录 EC2 `cms.premom.tech` 的 Ed25519 私钥。
+1. **环境变量（推荐）**：
+   ```bash
+   export SSH_PASSWORD="你的服务器密码"
+   ```
 
-## 放置路径
+2. **直接修改 `deploy.py`**（不推荐）：
+   编辑 `deploy.py` 顶部的 `SSH_PASSWORD` 默认值。
 
-`deploy.py` 按以下优先级查找：
+## 服务器信息
 
-1. 环境变量 `AI_TEAM_SSH_KEY`
-2. 本目录 `./ssh/ai-team-key`（推荐）
-3. `D:\ssh\ai-team-key`（旧全局位置）
-
-## 权限（Windows 不强制，Linux/Mac 必须）
-
-```bash
-chmod 600 ssh/ai-team-key
-```
+| 项目 | 值 |
+|------|-----|
+| 地址 | `47.121.130.229` |
+| 用户 | `root` |
+| 方式 | 密码登录 |

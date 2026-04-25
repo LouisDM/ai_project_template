@@ -20,11 +20,15 @@ cd D:\Projects\your_project_name
 
 根据 `CLAUDE.md` 里的「确认项目命名」清单改一遍各文件。
 
-### 2. 获取部署密钥（如需上线）
+### 2. 配置 SSH 密码（如需上线）
 
-向团队管理员索取 `ai-team-key`，放到项目内 `./ssh/ai-team-key`（`.gitignore` 已忽略）。
+部署使用密码登录。设置环境变量：
 
-查找优先级：`AI_TEAM_SSH_KEY` 环境变量 → `./ssh/ai-team-key` → `D:\ssh\ai-team-key`。
+```bash
+export SSH_PASSWORD="你的服务器密码"
+```
+
+或在 `deploy.py` 中直接修改默认值（不推荐，易泄露）。
 
 ### 3. 配置环境变量
 

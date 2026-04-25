@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-AI Project Template 一键部署脚本 — SSH 直连 EC2（无跳板机）
+AI Project Template 一键部署脚本 — SSH 直连服务器（无跳板机）
 
 依赖: pip install paramiko
 
 首次使用:
-  1. 向团队管理员获取 ai-team-key 私钥，放到 D:\\ssh\\ai-team-key
-     或通过环境变量 AI_TEAM_SSH_KEY 指定其他路径
+  1. 设置环境变量 SSH_PASSWORD（推荐），或直接在下方修改默认密码
   2. 按 CLAUDE.md 里的清单把下面几个常量改成你的项目名/端口
 
 用法:
@@ -26,35 +25,27 @@ import paramiko
 
 # ── 项目配置 ────────────────────────────────────────────
 # 默认发布到共享的 demo 测试环境：
-#   - 域名:   https://demo.premom.tech/（已配好 nginx + 泛域名证书）
-#   - 端口:   9700 前端 / 8006 后端（gateway-nginx 直接反代到宿主 9700）
+#   - 地址:   http://47.121.130.229:7005/
+#   - 端口:   7005 前端 / 8006 后端
 #   - 容器名: demo-frontend / demo-backend / demo-postgres
 #
-# 关键约束：前端容器必须把端口映射成 9700:80 到宿主，gateway-nginx 通过
-# 172.17.0.1:9700 反代，不依赖 Docker 网络互通。
+# 关键约束：前端容器必须把端口映射成 7005:80 到宿主。
 #
 # 想部署到独立环境时，把下面几个常量改成自己项目的值：
 #   PROJECT_NAME  → 唯一标识（影响容器名、部署目录）
 #   PUBLIC_DOMAIN → 你自己的域名（需在 DNS 先指向 EC2 公网 IP）
 #   FRONTEND_PORT / BACKEND_PORT → 在服务器上不冲突的端口
-# 改完以后记得同步改 docker-compose.prod.yml 里的 container_name 和 ports，
-# 同时联系管理员在 EC2 上加一份 nginx 反代配置到新端口。
+# 改完以后记得同步改 docker-compose.prod.yml 里的 container_name 和 ports。
 PROJECT_NAME = "demo"                     # 容器名前缀、部署目录名
-PUBLIC_DOMAIN = "demo.premom.tech"        # 对外域名（gateway-nginx 会做 HTTPS 反代）
-EC2_HOST = "cms.premom.tech"              # EC2 SSH 目标
-EC2_USER = "ec2-user"
+PUBLIC_DOMAIN = "47.121.130.229"          # 对外地址
+EC2_HOST = "47.121.130.229"               # SSH 目标
+EC2_USER = "root"
+SSH_PASSWORD = os.environ.get("SSH_PASSWORD", "P6ZxidTmtks!qPC")  # SSH 密码（支持环境变量覆盖）
 
-# SSH 私钥查找顺序：环境变量 → 项目本地 ssh/ 目录 → 全局 D:\ssh\
-_PROJECT_SSH_KEY = str(Path(__file__).resolve().parent / "ssh" / "ai-team-key")
-SSH_KEY_PATH = (
-    os.environ.get("AI_TEAM_SSH_KEY")
-    or (_PROJECT_SSH_KEY if os.path.exists(_PROJECT_SSH_KEY) else r"D:\ssh\ai-team-key")
-)
-
-FRONTEND_PORT = 9700
+FRONTEND_PORT = 7005
 BACKEND_PORT = 8006
 
-DEPLOY_DIR = f"/home/ec2-user/{PROJECT_NAME}"
+DEPLOY_DIR = f"/root/{PROJECT_NAME}"
 PROJECT_DIR = Path(__file__).resolve().parent
 ARCHIVE_NAME = f"{PROJECT_NAME}-deploy.tar.gz"
 
@@ -102,21 +93,13 @@ def _set_keepalive(client: paramiko.SSHClient, interval: int = 15) -> None:
 
 
 def connect_ec2() -> paramiko.SSHClient:
-    if not os.path.exists(SSH_KEY_PATH):
-        print(f"[错误] SSH 私钥未找到: {SSH_KEY_PATH}")
-        print("请向团队管理员获取 ai-team-key，放到以下任一位置：")
-        print(f"  1. 项目本地（推荐）:  {_PROJECT_SSH_KEY}")
-        print("  2. 全局:              D:\\ssh\\ai-team-key")
-        print("  3. 环境变量:          AI_TEAM_SSH_KEY=<你的路径>")
-        print("注意：项目本地 ssh/ 目录已在 .gitignore 中忽略，不会提交。")
-        sys.exit(1)
-
     ec2 = paramiko.SSHClient()
     ec2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
     ec2.connect(
         EC2_HOST,
         username=EC2_USER,
-        key_filename=SSH_KEY_PATH,
+        password=SSH_PASSWORD,
         timeout=15,
         look_for_keys=False,
         allow_agent=False,
@@ -146,7 +129,7 @@ def check_environment(ec2: paramiko.SSHClient):
     print("-" * 50)
     run_remote(ec2, "echo '=== OS ===' && cat /etc/os-release | head -3", "操作系统:")
     run_remote(ec2, "echo '=== Docker ===' && docker --version 2>&1 && docker compose version 2>&1", "Docker:")
-    run_remote(ec2, "echo '=== Disk ===' && df -h /home/ec2-user", "磁盘空间:")
+    run_remote(ec2, "echo '=== Disk ===' && df -h /root", "磁盘空间:")
     run_remote(ec2, "echo '=== Memory ===' && free -h", "内存:")
     run_remote(
         ec2,
@@ -159,7 +142,7 @@ def check_environment(ec2: paramiko.SSHClient):
 def upload_to_ec2(ec2: paramiko.SSHClient, archive_path: str):
     print("\n[2/4] 上传到 EC2...")
     sftp = ec2.open_sftp()
-    remote_path = f"/home/ec2-user/{ARCHIVE_NAME}"
+    remote_path = f"/root/{ARCHIVE_NAME}"
     sftp.put(archive_path, remote_path, callback=lambda sent, total: None)
     sftp.close()
     log("上传完成")
@@ -169,7 +152,7 @@ def deploy_on_ec2(ec2: paramiko.SSHClient):
     print("\n[3/4] 在 EC2 上解压并启动...")
 
     run_remote(ec2,
-        f"cd /home/ec2-user && tar xzf {ARCHIVE_NAME} && rm -f {ARCHIVE_NAME}",
+        f"mkdir -p {DEPLOY_DIR} && cd /root && tar xzf {ARCHIVE_NAME} && rm -f {ARCHIVE_NAME}",
         "解压文件..."
     )
 
@@ -179,7 +162,7 @@ def deploy_on_ec2(ec2: paramiko.SSHClient):
     )
 
     run_remote(ec2,
-        "groups | grep -q docker || sudo usermod -aG docker ec2-user",
+        f"groups | grep -q docker || sudo usermod -aG docker {EC2_USER}",
         "检查 Docker 权限..."
     )
 
@@ -200,7 +183,8 @@ def deploy_on_ec2(ec2: paramiko.SSHClient):
 
 def verify(ec2: paramiko.SSHClient):
     print("\n[4/4] 验证部署...")
-    run_remote(ec2, f"curl -sf http://localhost:{BACKEND_PORT}/health 2>&1 || echo 'Backend health check failed'", "后端健康检查:")
+    # 通过前端 nginx 反代检查后端 /health（避免直接暴露后端端口被安全组拦截）
+    run_remote(ec2, f"curl -sf http://localhost:{FRONTEND_PORT}/health 2>&1 || echo 'Health check failed'", "健康检查:")
     run_remote(ec2, f"curl -sf -o /dev/null -w '%{{http_code}}' http://localhost:{FRONTEND_PORT} 2>&1 || echo 'Frontend check failed'", "前端状态码:")
 
 
