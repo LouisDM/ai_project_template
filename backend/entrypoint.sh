@@ -20,6 +20,21 @@ async def init():
         #     END \$\$;
         # '''))
         # ─────────────────────────────────────────────────────────────
+        # 增量迁移：tasks 表
+        await conn.execute(__import__('sqlalchemy').text('''
+            CREATE TABLE IF NOT EXISTS tasks (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(200) NOT NULL,
+                description TEXT DEFAULT '',
+                status VARCHAR(20) DEFAULT 'todo',
+                priority VARCHAR(20) DEFAULT 'medium',
+                due_date TIMESTAMP NULL,
+                created_by INTEGER REFERENCES members(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        '''))
+        # ─────────────────────────────────────────────────────────────
     print('Database tables ready.')
 
 asyncio.run(init())

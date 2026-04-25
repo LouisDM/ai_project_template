@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Layout, Menu, Button, Typography } from 'antd';
-import { AppstoreOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, LogoutOutlined, UserOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const { Header, Content } = Layout;
@@ -21,6 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const menuItems = [
     { key: '/', label: 'Items', icon: <AppstoreOutlined /> },
+    { key: '/tasks', label: '待办管理', icon: <CheckCircleOutlined /> },
   ];
 
   const selectedKey = menuItems.find((m) => location.pathname === m.key)?.key || '/';

@@ -3,7 +3,7 @@ services:
     container_name: demo-frontend
     build: ./frontend
     ports:
-      - "9700:80"
+      - "7005:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -32,6 +32,8 @@ services:
   postgres:
     container_name: demo-postgres
     image: postgres:16-alpine
+    env_file:
+      - .env.docker
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-app_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}

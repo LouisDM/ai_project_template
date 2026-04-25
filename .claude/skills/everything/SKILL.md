@@ -85,17 +85,13 @@ ls -la <ai-team-file路径>/
 
 | 识别规则 | 目标位置 |
 |---------|---------|
-| 文件名包含 `key`、`pem`、`rsa`，或无扩展名的小文件（< 5KB） | `./ssh/ai-team-key` |
 | 文件名是 `.env`、`.env.docker.prod`、`env.prod`、`env.docker` | `./.env.docker.prod` |
 | 文件名是 `deploy-config.md`、`config.md`、包含 `domain`/`port` 关键词的 `.md` | 暂存，Phase 0.5 读取 |
 
-```bash
-# 创建目标目录（如果不存在）
-mkdir -p ./ssh
+> **注意**：本服务器使用密码登录（root），无需 SSH 密钥。deploy.py 中已配置 `USE_PASSWORD = True`。
 
+```bash
 # 复制文件（举例，实际路径替换为检测到的路径）
-cp <ai-team-file>/ai-team-key ./ssh/ai-team-key
-chmod 600 ./ssh/ai-team-key
 cp <ai-team-file>/.env.docker.prod ./.env.docker.prod
 ```
 
@@ -103,7 +99,6 @@ cp <ai-team-file>/.env.docker.prod ./.env.docker.prod
 
 ```
 已从 ai-team-file 读取到：
-✓ SSH 密钥 → 已就位
 ✓ 生产配置 → 已就位
 继续...
 ```
@@ -121,22 +116,19 @@ cp <ai-team-file>/.env.docker.prod ./.env.docker.prod
 
 **目标**：确认所有前置条件就绪。缺少任何一项，停下来，告诉用户去哪里找、找谁要。
 
-### 检查项 1：SSH 部署密钥
+### 检查项 1：部署服务器连通性
 
+本服务器使用密码登录，deploy.py 中已配置 `USE_PASSWORD = True`。无需 SSH 密钥。
+
+验证服务器可连通：
 ```bash
-ls ./ssh/ai-team-key 2>/dev/null && echo "EXISTS" || echo "MISSING"
+python -c "import paramiko; c = paramiko.SSHClient(); c.set_missing_host_key_policy(paramiko.AutoAddPolicy()); c.connect('47.121.130.229', username='root', password='P6ZxidTmtks!qPC', timeout=10); print('OK'); c.close()"
 ```
 
-**如果 MISSING**（且 Phase -1.3 没有就位过）：
-
-> ⚠️ 缺少部署密钥 `ai-team-key`
+**如果连接失败**：
+> ⚠️ 无法连接到部署服务器 47.121.130.229
 >
-> **你需要做的**：
-> 1. 打开项目里的 `doc/ai-team-setup.md`，找到「SSH 部署密钥」部分
-> 2. 把那段说明发给 AI 部门，他们会给你一个打包好的 `ai-team-file` 目录
-> 3. 收到后，把路径告诉我，格式：`ai 部门提供的配置：<路径>`
->
-> 放好之后重新输入 `/everything` 继续。
+> 请检查服务器是否在线，或联系管理员确认密码。
 
 ### 检查项 2：生产环境配置文件
 
@@ -192,7 +184,7 @@ ls .env.docker.prod 2>/dev/null && echo "EXISTS" || echo "MISSING"
 **不询问用户，AI 自动判断**：
 
 - Phase -1.3 读取到了 `deploy-config.md` 且包含域名/端口字段 → **路径 B（独立域名）**，直接读取配置
-- 否则 → **路径 A（共享 demo）**，使用 `demo.premom.tech`，零配置继续
+- 否则 → **路径 A（共享 demo）**，使用 `47.121.130.229:7005`，零配置继续
 
 > 路径 B 的前提是 AI 部门已提前在 `deploy-config.md` 里写好域名/端口分配。没有这个文件就意味着没有独立域名，无需问用户。用户收到 `ai-team-file` 里有 `deploy-config.md` 时自然走路径 B，否则走路径 A 演示即可。
 
@@ -203,15 +195,15 @@ ls .env.docker.prod 2>/dev/null && echo "EXISTS" || echo "MISSING"
 ```python
 # deploy.py 顶部常量
 PROJECT_NAME = "<项目名>"
-PUBLIC_DOMAIN = "<域名>"       # A 路径保持 demo.premom.tech
-FRONTEND_PORT = <端口>         # A 路径保持 9700
-BACKEND_PORT = <端口>          # A 路径保持 8006
+PUBLIC_DOMAIN = "47.121.130.229"  # A 路径保持 IP
+FRONTEND_PORT = 7005              # A 路径保持 7005
+BACKEND_PORT = 8006               # A 路径保持 8006
 
 # docker-compose.prod.yml
 container_name: <项目名>-frontend
 container_name: <项目名>-backend
 container_name: <项目名>-postgres
-ports: "<前端端口>:80"
+ports: "7005:80"
 ```
 
 同时更新前端显示名（如果 PRD 有产品名的话）：
@@ -296,7 +288,7 @@ ports: "<前端端口>:80"
 完成了！✓
 
 你要的「客户留言表单」已经上线：
-👉 https://demo.premom.tech/contact
+👉 http://47.121.130.229:7005/contact
 
 功能验证：
 ✓ 页面可以正常访问

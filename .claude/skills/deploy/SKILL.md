@@ -18,10 +18,10 @@ user_invocable: true
 | 前端直连 | http://47.121.130.229:7005 |
 | 后端直连 | http://47.121.130.229:7005 |
 | 容器名 | `demo-frontend` / `demo-backend` / `demo-postgres` |
-| 部署路径 | `/home/ec2-user/demo` |
+| 部署路径 | `/root/demo` |
 | 反代原理 | nginx 把 `47.121.130.229:7005` 反代到前端容器 |
 
-> **关键约束**：前端容器必须把 `9700:80` 映射到宿主。只要 `docker-compose.prod.yml` 的 `ports` 保留 `"9700:80"`，域名就通。
+> **关键约束**：前端容器必须把 `7005:80` 映射到宿主。只要 `docker-compose.prod.yml` 的 `ports` 保留 `"7005:80"`，服务就通。
 >
 > **注意**：demo 槽位是共享的测试环境 — 整个团队只能同时部署一个 demo 项目。正式项目需要自己的域名+端口（见下方「独立部署配置」）。
 
@@ -70,7 +70,7 @@ cd <project_root> && python deploy.py -y
 
 **`--rebuild`**（直接在服务器上重建，不重传）：
 ```bash
-cd /home/ec2-user/demo && sudo docker compose -f docker-compose.prod.yml up -d --build --force-recreate 2>&1 | tail -20
+cd /root/demo && sudo docker compose -f docker-compose.prod.yml up -d --build --force-recreate 2>&1 | tail -20
 ```
 
 **`--seed`**：
@@ -80,7 +80,7 @@ sudo docker exec demo-backend python seed.py
 
 **`--logs`**：
 ```bash
-cd /home/ec2-user/demo && sudo docker compose -f docker-compose.prod.yml logs --tail=50
+cd /root/demo && sudo docker compose -f docker-compose.prod.yml logs --tail=50
 ```
 
 ### Step 4: 验证
@@ -108,9 +108,9 @@ curl -sf --max-time 10 http://47.121.130.229:7005/health
 1. **改 `deploy.py` 顶部常量**：
    ```python
    PROJECT_NAME = "myapp"
-   PUBLIC_DOMAIN = "myapp.premom.tech"     # 或你自己的域名
-   FRONTEND_PORT = 9701                    # 服务器上必须未被占用
-   BACKEND_PORT = 8007
+   PUBLIC_DOMAIN = "myapp.yourdomain.com"  # 或你自己的域名
+   FRONTEND_PORT = 7005                    # 服务器上必须未被占用
+   BACKEND_PORT = 8006
    ```
 
 2. **改 `docker-compose.prod.yml`**：
@@ -119,7 +119,7 @@ curl -sf --max-time 10 http://47.121.130.229:7005/health
 
 3. **域名 DNS**：在 DNS 服务商加 A 记录 `<你的域名>` → `16.146.108.197`
 
-4. **服务器 nginx**：请管理员登录 EC2 加一份 `/opt/gateway/nginx/conf.d/<你的域名>.conf`，参考 `demo.premom.tech.conf`，把 `proxy_pass http://172.17.0.1:9700;` 里的端口改成你的 `FRONTEND_PORT`。
+4. **服务器 nginx**：如需域名访问，请管理员在服务器上加 nginx 配置，把请求反代到 `172.17.0.1:7005`。
 
 ## 错误处理
 

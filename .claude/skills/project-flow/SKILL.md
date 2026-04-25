@@ -60,8 +60,8 @@ Step 8. 最终报告      (给用户总结)
 1. 每个任务开始前 `TaskUpdate status=in_progress`
 2. 做完立即 `TaskUpdate status=completed`
 3. 遵守 `CLAUDE.md` 里的技术栈约定（FastAPI + async SQLAlchemy + React + Antd）
-4. 新增模型时同步改：`models.py` + `schemas.py` + `routers/` + `main.py 注册` + `entrypoint.sh 迁移`
-5. 新增前端页面时同步改：`pages/` + `App.tsx 路由` + `components/AppLayout.tsx 菜单`
+4. 新增模型时：在现有 `models.py` **文件末尾追加**新模型类（不要删除已有类）；在现有 `schemas.py` **文件末尾追加**新 schema；在 `routers/` 下**新建**路由文件（不要修改已有路由文件）；在 `main.py` 中**追加**注册新路由；在 `entrypoint.sh` 中**追加**迁移语句
+5. 新增前端页面时：在 `pages/` 下**新建**页面文件；在 `App.tsx` 中**追加**新路由；在 `components/AppLayout.tsx` 中**追加**新菜单项（不要删除已有页面和路由）
 
 **停下来等用户确认的情况**：
 - 方案实施中遇到无法决策的取舍
@@ -129,7 +129,7 @@ cd backend && python -c "from app.main import app; print('OK')"  # 后端 import
 - 数据库：<加了什么表/字段>
 
 部署：
-- 域名：https://demo.premom.tech/
+- 地址：http://47.121.130.229:7005/
 - commit：<hash>
 - 耗时：<X> 分钟
 
@@ -167,7 +167,9 @@ cd backend && python -c "from app.main import app; print('OK')"  # 后端 import
 
 ## 重要约束
 
-1. **闸口必须停**：Step 1 → 2 和 Step 2 → 3 之间等用户确认，不要一路自己飞
-2. **不要跳步**：不能从 Step 3 直接跳到 Step 6，必须经过 Step 4 本地验证
-3. **失败不隐瞒**：任何 step 失败都要立即告诉用户，不要装作成功
-4. **一次只专注一个需求**：如果用户中途丢新需求，先把当前的做完或显式暂停
+1. **必须在 ai_project_template 上开发**：禁止创建新项目、独立应用或使用其他框架。所有代码**增量追加**到现有项目中（FastAPI + React + PostgreSQL）。禁止删除、替换或修改现有模型、路由、页面，只能新增
+2. **闸口必须停**：Step 1 → 2 和 Step 2 → 3 之间等用户确认，不要一路自己飞
+3. **不要跳步**：不能从 Step 3 直接跳到 Step 6，必须经过 Step 4 本地验证
+4. **失败不隐瞒**：任何 step 失败都要立即告诉用户，不要装作成功
+5. **一次只专注一个需求**：如果用户中途丢新需求，先把当前的做完或显式暂停
+6. **禁止破坏性变更**：不要删除或替换现有模型（models.py）、路由（routers/）、页面（pages/）。新增功能时只追加，不动已有代码

@@ -6,6 +6,7 @@ import AppLayout from './components/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import ItemsPage from './pages/ItemsPage';
+import TasksPage from './pages/TasksPage';
 
 function ProtectedPage({ children }: { children: React.ReactNode }) {
   return (
@@ -26,6 +27,14 @@ export default function App() {
             element={
               <ProtectedPage>
                 <ItemsPage />
+              </ProtectedPage>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedPage>
+                <TasksPage />
               </ProtectedPage>
             }
           />

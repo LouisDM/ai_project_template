@@ -36,15 +36,15 @@ for k in ('PUBLIC_DOMAIN','EC2_HOST','FRONTEND_PORT','BACKEND_PORT'):
 ```
 
 得到：
-- `HTTPS_URL = https://{PUBLIC_DOMAIN}`
-- `BACKEND_URL = http://{EC2_HOST}:{BACKEND_PORT}`（直连后端，跳过 nginx）
+- `HTTP_URL = http://47.121.130.229:7005`
+- `BACKEND_URL = http://47.121.130.229:7005`（直连后端，跳过 nginx）
 
 ### Step 2: 接口冒烟测试
 
 运行 `tests_e2e/api_smoke.py`（模板已附带）：
 
 ```bash
-python tests_e2e/api_smoke.py --base-url https://{PUBLIC_DOMAIN}
+python tests_e2e/api_smoke.py --base-url http://47.121.130.229:7005
 ```
 
 脚本内容覆盖：
@@ -63,7 +63,7 @@ python tests_e2e/api_smoke.py --base-url https://{PUBLIC_DOMAIN}
 
 如果 `mcp__plugin_ecc_playwright__browser_*` 工具可用，走真实浏览器：
 
-1. **打开首页**：`mcp__plugin_ecc_playwright__browser_navigate` → `https://{PUBLIC_DOMAIN}/`
+1. **打开首页**：`mcp__plugin_ecc_playwright__browser_navigate` → `http://47.121.130.229:7005/`
 2. **断言跳转到 /login**：`browser_snapshot` 检查 URL 和登录表单存在
 3. **填表登录**：
    - 用户名输入 `admin`
@@ -82,7 +82,7 @@ python tests_e2e/api_smoke.py --base-url https://{PUBLIC_DOMAIN}
 无论成功失败，最后打印一个结构化报告：
 
 ```
-部署后冒烟测试 — <PUBLIC_DOMAIN>
+部署后冒烟测试 — 47.121.130.229:7005
 ───────────────────────────────
 [✓] HTTPS 可达                    200 OK  (142ms)
 [✓] GET /health                   200 OK

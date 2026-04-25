@@ -25,21 +25,52 @@ multica issue get <ISSUE_ID> --output json
 multica issue status <ISSUE_ID> in_progress
 ```
 
-### Step 2 — 签出项目代码
+### Step 2 — 签出项目代码（基于 ai_project_template）
+
+**⚠️ 关键约束：所有开发必须基于 ai_project_template，禁止创建新项目**
+
+如果工作目录已经有 ai_project_template 代码，直接使用它。如果没有，尝试：
 
 ```bash
-multica repo checkout <AI_PROJECT_TEMPLATE_REPO_URL>
+multica repo checkout
 ```
 
-签出完成后，进入项目目录（通常是仓库名对应的子目录）。后续所有操作都在这个目录内执行。
+如果 checkout 失败或创建了新目录，使用本地已知的 ai_project_template：
+
+```bash
+# 使用本地已配置的模板（推荐）
+cd /Users/louis/Downloads/配置任务/ai_project_template
+
+# 或者从 git 拉取
+git clone <仓库地址> . 2>/dev/null || echo "使用现有代码"
+```
+
+**禁止行为**：
+- ❌ 创建新的项目目录（如 knowledge-base/、my-app/ 等）
+- ❌ 初始化新的 npm/python 项目
+- ❌ 修改技术栈（必须用 FastAPI + React + PostgreSQL）
+- ❌ 修改 docker-compose.prod.yml 的端口映射（前端必须是 7005:80）
+- ❌ 修改 deploy.py 的 PROJECT_NAME / PUBLIC_DOMAIN / FRONTEND_PORT / BACKEND_PORT
+- ❌ **删除或替换现有模型（models.py）** — 新模型必须追加到现有文件末尾，保留所有已有模型类
+- ❌ **修改或删除现有路由文件**（如 auth.py、items.py、tasks.py）— 新增路由文件到 routers/ 目录
+- ❌ **删除或替换现有前端页面** — 新增页面文件，保留已有页面
+
+**正确做法**：
+- ✅ 在现有 backend/app/ 下**追加**新模型到 models.py 末尾，**追加**新 schema 到 schemas.py
+- ✅ 在 routers/ 下**新建**路由文件（如 routers/knowledge.py），在 main.py 中注册
+- ✅ 在现有 frontend/src/pages/ 下**新建**页面文件，在 App.tsx 中新增路由
+- ✅ 只修改：main.py（注册新路由）、App.tsx（新增路由）、AppLayout.tsx（新增菜单）
+- ✅ 复用已有的认证、数据库配置、部署流程
 
 ### Step 3 — 就位部署配置
 
-项目需要以下文件才能部署，它不在 git 里，从固定路径复制：
+项目目录下已有 `.env.docker.prod`（包含数据库密码等生产配置），部署脚本会自动将其复制为 `.env.docker`。
+
+如需自定义生产配置，可直接修改项目根目录的 `.env.docker.prod`：
 
 ```bash
-# 生产环境配置（包含数据库密码等）
-cp /Users/admin/Documents/ai_project/ai-team-file/.env.docker.prod .env.docker.prod
+# 生产环境配置已在项目中，如需修改直接编辑
+vim .env.docker.prod
 ```
 
 同时确保 `SSH_PASSWORD` 环境变量已设置：
@@ -51,7 +82,7 @@ export SSH_PASSWORD="你的服务器密码"
 如果 `.env.docker.prod` 不存在，**立即停止**并通过 Issue 评论告知用户：
 
 ```bash
-multica issue comment add <ISSUE_ID> --content "⚠️ 部署配置缺失：找不到 .env.docker.prod，请联系 AI 部门确认 /Users/admin/Documents/ai_project/ai-team-file/ 目录内容完整。"
+multica issue comment add <ISSUE_ID> --content "⚠️ 部署配置缺失：找不到 .env.docker.prod，请确保项目根目录包含此文件。"
 multica issue status <ISSUE_ID> blocked
 ```
 
@@ -81,8 +112,10 @@ multica issue comment add <ISSUE_ID> --content "我的实现方案：
 ### Step 5 — 开发实现
 
 按方案逐步实现，遵守 `CLAUDE.md` 里的技术栈约定：
-- 新加模型：`models.py` + `schemas.py` + `routers/` + `main.py 注册` + `entrypoint.sh 迁移`
-- 新加前端页面：`pages/` + `App.tsx 路由` + `AppLayout.tsx 菜单`
+- 新加模型：在现有 `models.py` **文件末尾追加**新模型类，不要删除已有类；在现有 `schemas.py` **文件末尾追加**新 schema
+- 新加路由：在 `routers/` 下**新建**路由文件（如 `knowledge.py`），在 `main.py` 中**追加**注册
+- 新加前端页面：在 `pages/` 下**新建**页面文件，在 `App.tsx` 中**追加**路由，在 `AppLayout.tsx` 中**追加**菜单项
+- 数据库迁移：在 `entrypoint.sh` 中**追加** `CREATE TABLE IF NOT EXISTS` 和 `ALTER TABLE IF NOT EXISTS` 语句
 
 ### Step 6 — 本地验证
 
@@ -103,13 +136,66 @@ git commit -m "feat: <需求一句话摘要>"
 
 ### Step 8 — 部署
 
+**8.1 检查是否有其他任务正在部署（部署竞争锁）**
+
+多个任务同时部署到同一台服务器会互相覆盖代码，导致部署失败或功能异常。部署前必须先检查锁：
+
+```bash
+# 方式一：检查远程锁文件
+python -c "
+import paramiko, sys
+client = paramiko.SSHClient()
+client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+client.connect('47.121.130.229', username='root', password='P6ZxidTmtks!qPC', timeout=10)
+stdin, stdout, stderr = client.exec_command('cat /root/.deploy_lock 2>/dev/null; echo \"EXIT_CODE=$?\"')
+out = stdout.read().decode()
+client.close()
+if 'DEPLOYING' in out:
+    print('LOCKED')
+    sys.exit(1)
+else:
+    print('FREE')
+"
+```
+
+如果返回 `LOCKED`，说明有其他任务正在部署：
+- **等待并重试**：sleep 60 秒后再次检查，最多重试 5 次
+- **如果一直锁定**：在 Issue 评论告知用户有并发部署冲突，等待而非强制覆盖
+
+**获取到锁之后才继续**：
+```bash
+python -c "
+import paramiko
+client = paramiko.SSHClient()
+client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+client.connect('47.121.130.229', username='root', password='P6ZxidTmtks!qPC', timeout=10)
+client.exec_command('echo DEPLOYING_\$(date +%s) > /root/.deploy_lock')
+client.close()
+"
+```
+
+**8.2 执行部署**
+
 ```bash
 python deploy.py -y
 ```
 
 deploy.py 会自动：打包 → SSH 传输到 EC2 → docker compose up --build → 健康检查。
 
-部署失败时，把错误日志贴到 Issue 评论，更新状态为 blocked：
+**8.3 释放锁**
+
+```bash
+python -c "
+import paramiko
+client = paramiko.SSHClient()
+client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+client.connect('47.121.130.229', username='root', password='P6ZxidTmtks!qPC', timeout=10)
+client.exec_command('rm -f /root/.deploy_lock')
+client.close()
+"
+```
+
+部署失败时，**先释放锁**，再把错误日志贴到 Issue 评论，更新状态为 blocked：
 ```bash
 multica issue comment add <ISSUE_ID> --content "⚠️ 部署失败：\n\`\`\`\n<错误信息>\n\`\`\`"
 multica issue status <ISSUE_ID> blocked
@@ -118,8 +204,8 @@ multica issue status <ISSUE_ID> blocked
 ### Step 9 — 验证上线
 
 ```bash
-curl -sf --max-time 10 https://demo.premom.tech/health
-curl -sf --max-time 10 -o /dev/null -w "%{http_code}" https://demo.premom.tech/
+curl -sf --max-time 10 http://47.121.130.229:7005/health
+curl -sf --max-time 10 -o /dev/null -w "%{http_code}" http://47.121.130.229:7005/
 ```
 
 ### Step 10 — 回写 Issue
@@ -131,7 +217,7 @@ multica issue status <ISSUE_ID> in_review
 
 multica issue comment add <ISSUE_ID> --content "完成上线 ✓
 
-**地址**：https://demo.premom.tech/
+**地址**：http://47.121.130.229:7005/
 **功能**：[简述实现了什么]
 **改动**：[后端 X 文件，前端 Y 文件]
 
@@ -142,8 +228,9 @@ multica issue comment add <ISSUE_ID> --content "完成上线 ✓
 
 ## 重要约束
 
-1. **Step 3 文件缺失 → 立即 blocked**，不要尝试绕过
-2. **Step 6 验证失败 → 必须修到绿**，不能带错误部署
-3. **部署失败 → blocked + 贴错误信息**，不要静默失败
-4. **所有进展都通过 Issue 评论告知用户**，不要让用户盲等
-5. **不要修改 deploy.py 的 PROJECT_NAME / PUBLIC_DOMAIN / 端口**，固定使用 demo 槽位
+1. **必须在 ai_project_template 上开发** — 禁止创建新项目或独立应用，所有代码增量添加到现有项目中
+2. **禁止修改端口和部署配置** — 不要改 deploy.py 的 PROJECT_NAME / PUBLIC_DOMAIN / FRONTEND_PORT(7005) / BACKEND_PORT(8006)，不要改 docker-compose.prod.yml 的端口映射
+3. **Step 3 文件缺失 → 立即 blocked**，不要尝试绕过
+4. **Step 6 验证失败 → 必须修到绿**，不能带错误部署
+5. **部署失败 → blocked + 贴错误信息**，不要静默失败
+6. **所有进展都通过 Issue 评论告知用户**，不要让用户盲等
