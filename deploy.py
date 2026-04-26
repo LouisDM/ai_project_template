@@ -191,10 +191,10 @@ def deploy_on_ec2(ec2: paramiko.SSHClient, frontend_port: int):
     run_remote(ec2, f"cd {DEPLOY_DIR} && cp .env.docker.prod .env.docker", "配置生产环境...")
     run_remote(ec2, f"groups | grep -q docker || sudo usermod -aG docker {EC2_USER}", "检查 Docker 权限...")
 
-    # 写入前端端口到 .env.docker
+    # 写入前端端口和项目名到 .env.docker
     run_remote(ec2,
-        f"cd {DEPLOY_DIR} && echo 'FRONTEND_PORT={frontend_port}' >> .env.docker",
-        "写入端口配置..."
+        f"cd {DEPLOY_DIR} && echo 'FRONTEND_PORT={frontend_port}' >> .env.docker && echo 'PROJECT_NAME={PROJECT_NAME}' >> .env.docker",
+        "写入端口和项目配置..."
     )
 
     print("\n    构建并启动 Docker 服务（这需要几分钟）...")
