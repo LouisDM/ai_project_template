@@ -46,6 +46,15 @@ async def init():
             );
         '''))
         # ─────────────────────────────────────────────────────────────
+        # Seed default member so /login works out of the box
+        from passlib.context import CryptContext
+        _pwd = CryptContext(schemes=['bcrypt'], deprecated='auto')
+        _hash = _pwd.hash('admin123')
+        await conn.execute(__import__('sqlalchemy').text(f'''
+            INSERT INTO members (id, username, password_hash, name, is_admin)
+            VALUES (1, 'admin', '{_hash}', '管理员', true)
+            ON CONFLICT (id) DO NOTHING;
+        '''))
     print('Database tables ready.')
 
 asyncio.run(init())
