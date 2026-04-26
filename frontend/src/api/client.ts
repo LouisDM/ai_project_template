@@ -16,9 +16,13 @@ client.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('member');
-      window.location.href = '/login';
+      const url = err.config?.url || '';
+      // 排除登录请求本身，避免登录失败时刷新页面导致错误提示无法显示
+      if (!url.includes('/auth/login')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('member');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   },
