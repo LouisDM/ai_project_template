@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,12 @@ interface LoginFormValues {
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('admin_token')) {
+      navigate('/admin/guestbook');
+    }
+  }, [navigate]);
 
   const handleLogin = async (values: LoginFormValues) => {
     setLoading(true);

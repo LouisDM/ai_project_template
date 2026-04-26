@@ -15,8 +15,11 @@ adminClient.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('admin_token');
-      window.location.href = '/admin/login';
+      const url = err.config?.url || '';
+      if (!url.includes('/admin/login')) {
+        localStorage.removeItem('admin_token');
+        window.location.href = '/admin/login';
+      }
     }
     return Promise.reject(err);
   },
