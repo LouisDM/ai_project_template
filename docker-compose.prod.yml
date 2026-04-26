@@ -12,8 +12,9 @@ services:
   backend:
     container_name: ${PROJECT_NAME:-demo}-backend
     build: ./backend
-    ports:
-      - "${BACKEND_PORT:-8006}:8000"
+    # 后端通过 Docker 内部网络访问，不需要暴露端口到宿主机
+    expose:
+      - "8000"
     env_file:
       - .env.docker
     volumes:
