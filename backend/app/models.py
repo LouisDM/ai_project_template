@@ -48,3 +48,13 @@ class Task(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
     creator: Mapped["Member"] = relationship()
+
+
+class Guestbook(Base):
+    __tablename__ = "guestbook"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(50))
+    content: Mapped[str] = mapped_column(Text)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

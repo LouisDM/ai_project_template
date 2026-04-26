@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_file_size: int = 20 * 1024 * 1024  # 20MB
     app_base_url: str = "http://localhost:5173"
+    admin_username: str = "admin"
+    admin_password: str = "admin123"
 
     model_config = {"env_file": [".env", ".env.docker"], "extra": "ignore"}
 

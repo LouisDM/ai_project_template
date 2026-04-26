@@ -25,10 +25,12 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 
-from app.routers import auth, items, tasks
+from app.routers import auth, items, tasks, guestbook, admin
 app.include_router(auth.router)
 app.include_router(items.router)
 app.include_router(tasks.router)
+app.include_router(guestbook.router)
+app.include_router(admin.router)
 
 
 @app.get("/health")

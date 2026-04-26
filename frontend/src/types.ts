@@ -13,3 +13,10 @@ export interface Item {
   created_at: string;
   updated_at: string;
 }
+
+export interface Guestbook {
+  id: number;
+  name: string;
+  content: string;
+  created_at: string;
+}

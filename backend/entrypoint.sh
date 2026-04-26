@@ -35,6 +35,17 @@ async def init():
             );
         '''))
         # ─────────────────────────────────────────────────────────────
+        # 增量迁移：guestbook 表
+        await conn.execute(__import__('sqlalchemy').text('''
+            CREATE TABLE IF NOT EXISTS guestbook (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(50) NOT NULL,
+                content TEXT NOT NULL,
+                is_deleted BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        '''))
+        # ─────────────────────────────────────────────────────────────
     print('Database tables ready.')
 
 asyncio.run(init())

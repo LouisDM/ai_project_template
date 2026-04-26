@@ -69,3 +69,17 @@ class TaskOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}
+
+
+# ── Guestbook ──────────────────────────────────────────────
+class GuestbookCreate(BaseModel):
+    name: str
+    content: str
+
+
+class GuestbookOut(BaseModel):
+    id: int
+    name: str
+    content: str
+    created_at: datetime
+    model_config = {"from_attributes": True}

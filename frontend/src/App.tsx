@@ -7,6 +7,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import ItemsPage from './pages/ItemsPage';
 import TasksPage from './pages/TasksPage';
+import GuestbookPage from './pages/GuestbookPage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import AdminGuestbookPage from './pages/AdminGuestbookPage';
 
 function ProtectedPage({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +17,14 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
       <AppLayout>{children}</AppLayout>
     </ProtectedRoute>
   );
+}
+
+function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('admin_token');
+  if (!token) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <>{children}</>;
 }
 
 export default function App() {
@@ -36,6 +47,16 @@ export default function App() {
               <ProtectedPage>
                 <TasksPage />
               </ProtectedPage>
+            }
+          />
+          <Route path="/guestbook" element={<GuestbookPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin/guestbook"
+            element={
+              <AdminProtectedRoute>
+                <AdminGuestbookPage />
+              </AdminProtectedRoute>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
