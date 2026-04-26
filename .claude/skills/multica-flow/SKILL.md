@@ -32,7 +32,36 @@ multica issue status <ISSUE_ID> in_progress
 
 提取 `description`，有附件则下载读取。
 
-### Step 2 — 理解现有代码
+### Step 2 — 验证工作目录并理解现有代码
+
+**2.1 验证工作目录（STOP 自检）**
+
+运行以下检查确认当前目录是 `ai_project_template`：
+
+```bash
+# 必须存在的关键文件
+test -f CLAUDE.md && test -f backend/app/main.py && test -f frontend/src/App.tsx && test -f deploy.py && echo "VALID" || echo "INVALID"
+
+# 检查 deploy.py 大小（模板约 7900 bytes）
+python3 -c "import os; s=os.path.getsize('deploy.py'); print('OK' if s > 5000 else f'INVALID: deploy.py={s}b')"
+
+# 检查是否有 PostgreSQL/asyncpg（模板有，独立项目通常没有）
+grep -q asyncpg backend/requirements.txt 2>/dev/null && echo "HAS_ASYNCPG" || echo "MISSING_ASYNCPG"
+```
+
+**CHECKPOINT**: 如果任一检查返回 INVALID：
+- **STOP，不要继续编码**
+- 使用正确的模板目录：
+  ```bash
+  cd /Users/louis/Downloads/配置任务/ai_project_template
+  ```
+- 如果目录不存在或有冲突，clone 最新代码：
+  ```bash
+  git clone https://github.com/LouisDM/ai_project_template.git /tmp/ai_project_template
+  cd /tmp/ai_project_template
+  ```
+
+**2.2 理解现有代码**
 
 读 `CLAUDE.md`、`backend/app/main.py`、`frontend/src/App.tsx`，制定实现方案。
 
