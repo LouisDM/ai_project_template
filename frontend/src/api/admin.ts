@@ -1,7 +1,9 @@
-import client from './client';
+import axios from 'axios';
 import type { Guestbook } from '../types';
 
-const adminClient = client;
+const adminClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+});
 
 adminClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
