@@ -61,7 +61,7 @@ Step 8. 最终报告      (给用户总结)
 2. 做完立即 `TaskUpdate status=completed`
 3. 遵守 `CLAUDE.md` 里的技术栈约定（FastAPI + async SQLAlchemy + React + Antd）
 4. 新增模型时：在现有 `models.py` **文件末尾追加**新模型类（不要删除已有类）；在现有 `schemas.py` **文件末尾追加**新 schema；在 `routers/` 下**新建**路由文件（不要修改已有路由文件）；在 `main.py` 中**追加**注册新路由；在 `entrypoint.sh` 中**追加**迁移语句
-5. 新增前端页面时：在 `pages/` 下**新建**页面文件；在 `App.tsx` 中**追加**新路由；在 `components/AppLayout.tsx` 中**追加**新菜单项（不要删除已有页面和路由）
+5. 新增前端页面时：在 `pages/` 下**新建**页面文件；在 `App.tsx` 中**追加**新路由；在 `components/AppLayout.tsx` 中**追加**新菜单项（不要删除已有页面和路由）。新项目必须同步更新 `frontend/index.html` 的 `<title>`、`frontend/src/pages/LoginPage.tsx` 登录页标题、`backend/app/main.py` 的 `FastAPI(title="...")`
 
 **停下来等用户确认的情况**：
 - 方案实施中遇到无法决策的取舍

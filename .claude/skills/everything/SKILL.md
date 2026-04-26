@@ -206,10 +206,11 @@ container_name: <项目名>-postgres
 ports: "7005:80"
 ```
 
-同时更新前端显示名（如果 PRD 有产品名的话）：
+同时更新项目显示名（如果 PRD 有产品名的话）：
 - `frontend/index.html` 的 `<title>`
 - `frontend/src/components/AppLayout.tsx` 的顶栏标题
 - `frontend/src/pages/LoginPage.tsx` 的登录页标题
+- `backend/app/main.py` 的 `FastAPI(title="...")` 标题
 
 完成后告知用户：
 

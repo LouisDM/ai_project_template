@@ -115,6 +115,7 @@ multica issue comment add <ISSUE_ID> --content "我的实现方案：
 - 新加模型：在现有 `models.py` **文件末尾追加**新模型类，不要删除已有类；在现有 `schemas.py` **文件末尾追加**新 schema
 - 新加路由：在 `routers/` 下**新建**路由文件（如 `knowledge.py`），在 `main.py` 中**追加**注册
 - 新加前端页面：在 `pages/` 下**新建**页面文件，在 `App.tsx` 中**追加**路由，在 `AppLayout.tsx` 中**追加**菜单项
+- 项目身份同步（新项目必须）：同步更新 `frontend/index.html` 的 `<title>`、`frontend/src/components/AppLayout.tsx` 顶栏标题、`frontend/src/pages/LoginPage.tsx` 登录页标题、`backend/app/main.py` 的 `FastAPI(title="...")`
 - 数据库迁移：在 `entrypoint.sh` 中**追加** `CREATE TABLE IF NOT EXISTS` 和 `ALTER TABLE IF NOT EXISTS` 语句
 
 **前端面向用户（非开发者）的约束**：
@@ -225,7 +226,7 @@ multica issue status <ISSUE_ID> blocked
 
 ```bash
 curl -sf --max-time 10 -o /dev/null -w "%{http_code}" http://<分配的域名>/
-curl -sf --max-time 10 http://<分配的域名>/api/health
+curl -sf --max-time 10 http://<分配的域名>/health
 ```
 
 ### Step 10 — 回写 Issue

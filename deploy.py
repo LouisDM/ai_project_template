@@ -239,7 +239,7 @@ def verify(ec2: paramiko.SSHClient, domain: str, frontend_port: int):
         f"端口检查 ({frontend_port}):"
     )
     run_remote(ec2,
-        f"curl -sf -o /dev/null -w '%{{http_code}}' http://localhost:{frontend_port}/api/health 2>&1 || echo 'API 检查失败'",
+        f"curl -sf -o /dev/null -w '%{{http_code}}' http://localhost:{frontend_port}/health 2>&1 || echo 'API 检查失败'",
         "API 健康检查:"
     )
 
@@ -314,7 +314,7 @@ def main():
     print("  部署完成!")
     print(f"  域名入口: http://{PUBLIC_DOMAIN}/")
     print(f"  前端直连: http://{EC2_HOST}:{FRONTEND_PORT}")
-    print(f"  API 检查: http://{PUBLIC_DOMAIN}/api/health")
+    print(f"  API 检查: http://{PUBLIC_DOMAIN}/health")
     print("=" * 60)
 
 
