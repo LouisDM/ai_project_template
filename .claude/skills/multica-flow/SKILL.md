@@ -15,6 +15,9 @@ user_invocable: false
 5. **本地验证失败不能部署** — `tsc --noEmit`、`vite build`、`python import` 全绿
 6. **禁止改端口/域名配置** — 不改 `deploy.py`、`docker-compose.prod.yml`
 7. **模型和路由只追加不删除** — 新模型加 `models.py` 末尾，新路由加 `routers/` 目录
+8. **AI 调用必须降级** — LLM 失败返回空值，不抛异常阻断流程
+9. **空数据必须保护** — 数组/对象操作前检查 null/undefined/length
+10. **Contract 功能必须完整** — 筛选、排序、分页等辅助功能不能漏做
 
 ---
 
@@ -45,6 +48,18 @@ multica issue status <ISSUE_ID> in_progress
 - `entrypoint.sh` 追加 `CREATE TABLE IF NOT EXISTS`
 
 **前端约束**：面向最终用户设计，不出现「API」「Schema」「路由」等技术词汇。
+- 表单输入必须用原生 `<input>`、`<textarea>`、`<select>`，禁止用 div/span 模拟
+- 所有 `.map()`、`.filter()` 操作前检查 `Array.isArray(data) && data.length > 0`
+- 图表组件数据为空时传入 `[]`，不要传 undefined
+- 空状态显示 Empty 组件或提示文字，禁止页面空白或报错
+
+**后端约束**：
+- AI 调用必须 try-catch，失败返回空值/默认值：`try: label = await ai_client.classify(content); except: label = ""`
+- 数据库查询返回的数据必须包含 Contract 要求的所有字段
+
+**功能完整性约束**：
+- Contract 要求"筛选"→ 必须实现筛选控件；要求"分页"→ 必须实现分页组件
+- 禁止只做主体功能而漏做辅助功能
 
 ### Step 4 — 本地验证（STOP 自检）
 
@@ -54,7 +69,19 @@ cd frontend && npx vite build
 cd backend && python -c "from app.main import app; print('OK')"
 ```
 
-**任意一条失败 → STOP，修到通过。**
+**CHECKPOINT**: 任意一条失败 → STOP，修到通过。
+
+**额外自检 — 数据保存验证**：
+启动后端后，用 curl 测试 API 写入和读取：
+```bash
+# 写入测试数据
+curl -X POST http://localhost:8000/api/<路由> \
+  -H "Content-Type: application/json" \
+  -d '<测试数据>'
+# 查询确认数据存在
+curl http://localhost:8000/api/<路由>
+```
+**如果查不到记录 → STOP，修复保存逻辑。**
 
 ### Step 5 — 提交（STOP 自检）
 
@@ -122,6 +149,7 @@ multica issue comment add <ISSUE_ID> --content "## Sprint <N> 完成 ✓
 - [x] 本地 typecheck 通过
 - [x] 本地 build 通过
 - [x] 后端 import 正常
+- [x] API 数据保存验证通过
 - [x] 部署成功
 - [x] 健康检查 200
 
