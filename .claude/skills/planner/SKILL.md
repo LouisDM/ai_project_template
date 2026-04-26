@@ -92,14 +92,32 @@ multica issue get <ISSUE_ID> --output json
 - ❌ "页面要好看" → 不可测试
 - ✅ "用户点击新建按钮后，Modal 在 1 秒内弹出，包含标题和内容输入框" → 可测试
 
-### Step 5 — 回写 Issue（强制，不可跳过）
+### MANDATORY STEP 5 — 回写 Issue 评论并更新状态（BLOCKING，不可跳过）
+
+**这一步是 BLOCKING 的。不写评论，规划不算完成。**
+
+**5.1 检查 multica CLI 可用性**
+
+```bash
+which multica && echo "CLI_OK" || echo "CLI_MISSING"
+```
+
+- CLI_MISSING → 将完整 Product Spec 保存到本地 `product_spec.md`，并在顶部标注 `[multica CLI 不可用，Spec 未同步到 Issue]`
+
+**5.2 发送 Spec 和 Contract**
 
 ```bash
 multica issue comment add <ISSUE_ID> --content "<Product Spec + 所有 Sprint Contract>"
 multica issue status <ISSUE_ID> ready_for_dev
 ```
 
-**CHECKPOINT**: 评论发送后，重读 Issue 确认评论存在。如果不存在，重试 3 次。
+**CHECKPOINT**: 评论发送后，运行 `multica issue get <ISSUE_ID> --output json` 确认 `comments` 数组非空且包含本 Spec。如果不存在：
+1. 等待 3 秒，重试发送
+2. 仍失败，检查 `multica issue list` 是否能正常返回
+3. 再重试 2 次
+4. 仍失败 → 将完整 Spec 保存到 `product_spec.md`，并标注 `[multica API 写入失败，Spec 仅本地保存]`
+
+**绝对禁止**：规划完成后不写评论、不保存 Spec 到任何位置就直接退出。
 
 ---
 
