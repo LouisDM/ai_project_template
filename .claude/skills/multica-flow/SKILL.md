@@ -134,12 +134,25 @@ cd backend && python -c "from app.main import app; print('OK')"
 
 任何一步失败必须修到通过，不带错误继续。
 
-### Step 7 — 提交
+### Step 7 — 提交（强制步骤，不可跳过）
 
 ```bash
-git add -A
-git commit -m "feat: <需求一句话摘要>"
+# 1. 检查是否有未提交的文件
+if [ -n "$(git status --short)" ]; then
+    git add -A
+    git commit -m "feat: <需求一句话摘要>"
+fi
+
+# 2. 验证 commit 是否成功（必须有新提交才能部署）
+if git diff HEAD~1 --quiet; then
+    echo "⚠️ 提交失败或没有变更，停止部署"
+    exit 1
+fi
 ```
+
+**关键约束**：
+- 如果 `git status --short` 有输出但 `git commit` 失败（如 hook 错误），**必须先解决错误再部署**
+- 部署前必须确认有新的 commit，否则 deploy.py 会打包旧代码
 
 ### Step 8 — 部署
 
@@ -203,7 +216,9 @@ deploy.py 会自动：
 
 **部署目录**：`/root/<项目名>/`（每个项目独立，互不干扰）
 
-**8.3 释放锁**
+**8.3 释放锁（无论成功失败都必须执行）**
+
+部署完成后（无论成功还是失败），必须释放锁：
 
 ```bash
 python -c "
@@ -215,6 +230,10 @@ client.exec_command('rm -f /root/.deploy_lock')
 client.close()
 "
 ```
+
+**关键约束**：
+- 释放锁是**强制步骤**，无论部署成功、失败、还是异常退出，都必须执行
+- 如果 Agent 进程崩溃导致锁未释放，后续任务会阻塞——当前 Agent 启动时应先检查并清理自己的锁
 
 部署失败时，**先释放锁**，再把错误日志贴到 Issue 评论，更新状态为 blocked：
 ```bash
@@ -236,23 +255,30 @@ curl -sf --max-time 10 http://<分配的域名>/health
 ```bash
 multica issue status <ISSUE_ID> in_review
 
-multica issue comment add <ISSUE_ID> --content "完成上线 ✓
+multica issue comment add <ISSUE_ID> --content "## Sprint <N> 完成 ✓
 
-**域名入口**：http://<分配的域名>/
-**登录**：admin / admin123（或 seed 中设置的密码）
+**实现内容**：
+- <交付物 1>
+- <交付物 2>
 
-**功能说明**（面向用户）：
-- [功能1]：如何操作、能达到什么效果
-- [功能2]：如何操作、能达到什么效果
-- ...
+**部署地址**：http://<分配的域名>/
+**登录**：admin / admin123
 
-**使用指引**：
-1. 打开地址，用 admin 账号登录
-2. 在左侧菜单选择 [功能模块名称]
-3. [具体操作步骤]
+**验证结果**：
+- [x] 本地 typecheck 通过
+- [x] 本地 build 通过
+- [x] 后端 import 正常
+- [x] 部署成功
+- [x] 健康检查 200
 
-请验收，有问题直接在这里留言。"
+请验收。如果通过，继续 Sprint <N+1>；如果有问题，请留言。"
 ```
+
+**回写约束**：
+- 评论中必须包含**部署域名**，不能遗漏
+- 如果这是最后一个 Sprint，在评论中说明"所有 Sprint 已完成，项目已上线"
+- 面向最终用户写功能说明，不要罗列技术文件或 API 路由
+- 密码变更时必须在评论中说明
 
 **回写约束**：
 - 面向最终用户写功能说明，不要罗列技术文件或 API 路由
