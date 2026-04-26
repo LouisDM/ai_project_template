@@ -137,23 +137,41 @@ multica issue status <ISSUE_ID> blocked
 <PASS：继续 Sprint N+1 / FAIL：需要修复后重新评估>
 ```
 
-### Step 5 — 回写 Issue 并流转（强制，不可跳过）
+### MANDATORY STEP 5 — 回写 Issue 评论并流转状态（BLOCKING，不可跳过）
 
-**PASS**：
+**这一步是 BLOCKING 的。不写评论，评估不算完成。**
+
+**5.1 检查 multica CLI 可用性**
+
+```bash
+which multica && echo "CLI_OK" || echo "CLI_MISSING"
+```
+
+- CLI_MISSING → 将完整评估报告保存到本地 `eval_report.md`，并在报告顶部标注 `[multica CLI 不可用，报告未同步到 Issue]`
+
+**5.2 PASS 时回写**
+
 ```bash
 multica issue comment add <ISSUE_ID> --content "<评估报告>"
 multica issue status <ISSUE_ID> in_progress
 multica issue assign <ISSUE_ID> <GENERATOR_AGENT_ID>
 ```
 
-**FAIL**：
+**5.3 FAIL 时回写（同样必须执行，不可因评估失败而跳过写评论）**
+
 ```bash
 multica issue comment add <ISSUE_ID> --content "<评估报告>"
 multica issue status <ISSUE_ID> in_progress
 multica issue assign <ISSUE_ID> <GENERATOR_AGENT_ID>
 ```
 
-**CHECKPOINT**: 评论发送后，重读 Issue 确认评论存在。如果不存在，重试 3 次。
+**CHECKPOINT**: 评论发送后，运行 `multica issue get <ISSUE_ID> --output json` 确认 `comments` 数组非空且包含本报告。如果不存在：
+1. 等待 3 秒，重试发送
+2. 仍失败，检查 `multica issue list` 是否能正常返回
+3. 再重试 2 次
+4. 仍失败 → 将完整报告保存到 `eval_report.md`，并标注 `[ multica API 写入失败，报告仅本地保存 ]`
+
+**绝对禁止**：评估完成后不写评论、不保存报告到任何位置就直接退出。
 
 ---
 

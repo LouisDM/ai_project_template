@@ -23,6 +23,8 @@ user_invocable: false
 13. **登录错误必须显示提示** — 失败时调用 `message.error('账号或密码错误')` 或等效方法，禁止静默失败
 14. **项目身份必须随 Issue 更新** — `main.py` 的 `FastAPI(title=...)`、`index.html` 的 `<title>`、`AppLayout.tsx` 的应用名、`LoginPage.tsx` 的标题，都必须根据 Issue 标题更新，不能保留 "AI Project Template"
 15. **entrypoint.sh 必须包含管理员初始化** — 如果项目有 admin 功能，在 `entrypoint.sh` 的 `init()` 中通过 `INSERT INTO ... ON CONFLICT DO NOTHING` 创建默认管理员账号（从环境变量读取），确保首次启动即可登录
+16. **统计/图表后端 API 必须返回标准格式** — 任何涉及 KPI、图表、数据洞察的功能，后端必须提供独立 REST 接口（如 `/api/xxx/stats`），返回结构为 `{ totals: {...}, distribution: [...], trend: [...], ai_summary: "..." }`。禁止让前端直接遍历全量数据做统计计算
+17. **任何失败必须写评论说明原因** — 部署失败、评估失败、测试失败，都必须用 `multica issue comment add` 写明失败原因和日志摘要。禁止静默标记 blocked 或不写评论直接退出
 
 ---
 
@@ -90,6 +92,12 @@ grep -q asyncpg backend/requirements.txt 2>/dev/null && echo "HAS_ASYNCPG" || ec
 **后端约束**：
 - AI 调用必须 try-catch，失败返回空值/默认值：`try: label = await ai_client.classify(content); except: label = ""`
 - 数据库查询返回的数据必须包含 Contract 要求的所有字段
+
+**统计/图表功能约束**：
+- 涉及数据洞察、KPI、图表的功能，后端必须提供独立聚合接口（如 `/api/xxx/stats`）
+- 统计接口必须处理空数据情况：返回 0 值或空数组，不能抛异常
+- 前端统计页面必须对接后端统计接口，禁止前端遍历全量数据做聚合计算
+- AI 洞察摘要由后端生成后通过统计接口返回，前端只做展示
 
 **功能完整性约束**：
 - Contract 要求"筛选"→ 必须实现筛选控件；要求"分页"→ 必须实现分页组件
@@ -204,3 +212,6 @@ multica issue comment add <ISSUE_ID> --content "## Sprint <N> 完成 ✓
 | 部署锁被占 | sleep 60 重试，最多 5 次，仍锁则评论告知用户 |
 | 部署失败 | 先释放锁，再评论贴错误日志，状态设为 blocked |
 | 评论发送失败 | 重试 3 次，保存到本地 `issue_comment.md` |
+| 统计 API 返回异常 | 检查后端聚合查询 SQL，确保空数据返回 0 值而非抛异常 |
+| Evaluator 不写评论 | Generator 收到 in_review 但无评估报告时，主动评论询问评估状态 |
+| 标记 blocked 前不写评论 | 绝对禁止。任何 blocked 必须先写评论说明原因和日志 |
