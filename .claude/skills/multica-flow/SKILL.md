@@ -158,7 +158,9 @@ c.exec_command('rm -f /root/.deploy_lock')
 c.close()
 ```
 
-### Step 7 — 回写 Issue（强制，不可跳过）
+### MANDATORY STEP 7 — 写 Issue 评论（BLOCKING，不可跳过）
+
+**这一步是 BLOCKING 的。不写评论，任务不算完成。**
 
 ```bash
 multica issue status <ISSUE_ID> in_review
