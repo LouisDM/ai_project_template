@@ -34,7 +34,7 @@ SSH_PASSWORD = os.environ.get("SSH_PASSWORD", "P6ZxidTmtks!qPC")
 # ── 端口配置 ────────────────────────────────────────────
 PORT_RANGE_START = 22222
 PORT_RANGE_END = 22333
-NGINX_CONF_DIR = "/etc/nginx/conf.d"
+NGINX_CONF_DIR = "/www/server/panel/vhost/nginx"
 DOMAIN_SUFFIX = "demo.intelliastra.com"
 
 # ── 项目配置 ────────────────────────────────────────────
@@ -221,8 +221,8 @@ def setup_nginx(ec2: paramiko.SSHClient, domain: str, frontend_port: int):
     # 使用 heredoc 写入配置文件，避免引号转义问题
     run_remote(ec2, f"cat > {config_path} << 'NGINX_EOF'\n{config_content}NGINX_EOF", "生成 nginx 配置...")
 
-    run_remote(ec2, "nginx -t 2>&1", "测试 nginx 配置...")
-    run_remote(ec2, "nginx -s reload 2>&1 || nginx 2>&1", "重载 nginx...")
+    run_remote(ec2, "/www/server/nginx/sbin/nginx -t 2>&1", "测试 nginx 配置...")
+    run_remote(ec2, "/www/server/nginx/sbin/nginx -s reload 2>&1", "重载 nginx...")
 
     log(f"域名配置完成: http://{domain}")
 
