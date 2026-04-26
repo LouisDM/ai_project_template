@@ -49,8 +49,8 @@ git clone <仓库地址> . 2>/dev/null || echo "使用现有代码"
 - ❌ 创建新的项目目录（如 knowledge-base/、my-app/ 等）
 - ❌ 初始化新的 npm/python 项目
 - ❌ 修改技术栈（必须用 FastAPI + React + PostgreSQL）
-- ❌ 修改 docker-compose.prod.yml 的端口映射（前端必须是 7005:80）
-- ❌ 修改 deploy.py 的 PROJECT_NAME / PUBLIC_DOMAIN / FRONTEND_PORT / BACKEND_PORT
+- ❌ 修改 docker-compose.prod.yml 的端口映射（deploy.py 会自动分配）
+- ❌ 修改 deploy.py 的常量（Agent 调用 deploy.py 时会自动分配端口和域名）
 - ❌ **删除或替换现有模型（models.py）** — 新模型必须追加到现有文件末尾，保留所有已有模型类
 - ❌ **修改或删除现有路由文件**（如 auth.py、items.py、tasks.py）— 新增路由文件到 routers/ 目录
 - ❌ **删除或替换现有前端页面** — 新增页面文件，保留已有页面
@@ -186,7 +186,12 @@ client.close()
 python deploy.py -y
 ```
 
-deploy.py 会自动：打包 → SSH 传输到 EC2 → docker compose up --build → 健康检查。
+deploy.py 会自动：
+1. 扫描服务器端口，从 22222-22333 范围自动分配一对未使用的端口（前端/后端）
+2. 从项目名自动生成二级域名（如 `myproject.demo.intelliastra.com`）
+3. 在服务器上自动生成 nginx 反向代理配置
+4. 打包 → SSH 传输到 EC2 → docker compose up --build → 健康检查
+5. 部署完成后返回分配的域名和端口
 
 **8.3 释放锁**
 
@@ -223,7 +228,7 @@ multica issue status <ISSUE_ID> in_review
 
 multica issue comment add <ISSUE_ID> --content "完成上线 ✓
 
-**地址**：http://47.121.130.229:7005/
+**域名入口**：http://<分配的域名>/
 **登录**：admin / admin123（或 seed 中设置的密码）
 
 **功能说明**（面向用户）：

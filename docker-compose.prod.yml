@@ -1,19 +1,19 @@
 services:
   frontend:
-    container_name: demo-frontend
+    container_name: ${PROJECT_NAME:-demo}-frontend
     build: ./frontend
     ports:
-      - "7005:80"
+      - "${FRONTEND_PORT:-7005}:80"
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
 
   backend:
-    container_name: demo-backend
+    container_name: ${PROJECT_NAME:-demo}-backend
     build: ./backend
     ports:
-      - "8006:8000"
+      - "${BACKEND_PORT:-8006}:8000"
     env_file:
       - .env.docker
     volumes:
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
   postgres:
-    container_name: demo-postgres
+    container_name: ${PROJECT_NAME:-demo}-postgres
     image: postgres:16-alpine
     env_file:
       - .env.docker
@@ -51,6 +51,3 @@ services:
 volumes:
   app_pg_data:
   app_uploads:
-
-# gateway-nginx 通过 172.17.0.1:9700（宿主 Docker 网桥）反代到前端容器，
-# 不依赖 Docker 网络互通 — 只要 frontend 服务把 "9700:80" 暴露到宿主即可。
