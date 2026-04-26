@@ -182,16 +182,25 @@ client.close()
 
 **8.2 执行部署**
 
+**必须指定项目名**，每个项目部署到独立目录，避免代码互相覆盖：
+
 ```bash
-python deploy.py -y
+python deploy.py -y --name <项目名>
 ```
 
+项目名规则：
+- 从 Issue 标题提取关键词，转为小写、替换空格为连字符
+- 例如：Issue "员工通讯录管理系统" → `--name addressbook`
+- 例如：Issue "会议室预约系统" → `--name meeting-room`
+
 deploy.py 会自动：
-1. 扫描服务器端口，从 22222-22333 范围自动分配一对未使用的端口（前端/后端）
-2. 从项目名自动生成二级域名（如 `myproject.demo.intelliastra.com`）
+1. 扫描服务器端口，从 22222-22333 范围自动分配一个未使用的端口
+2. 从项目名自动生成二级域名（如 `addressbook.demo.intelliastra.com`）
 3. 在服务器上自动生成 nginx 反向代理配置
 4. 打包 → SSH 传输到 EC2 → docker compose up --build → 健康检查
 5. 部署完成后返回分配的域名和端口
+
+**部署目录**：`/root/<项目名>/`（每个项目独立，互不干扰）
 
 **8.3 释放锁**
 
@@ -215,8 +224,8 @@ multica issue status <ISSUE_ID> blocked
 ### Step 9 — 验证上线
 
 ```bash
-curl -sf --max-time 10 http://47.121.130.229:7005/health
-curl -sf --max-time 10 -o /dev/null -w "%{http_code}" http://47.121.130.229:7005/
+curl -sf --max-time 10 -o /dev/null -w "%{http_code}" http://<分配的域名>/
+curl -sf --max-time 10 http://<分配的域名>/api/health
 ```
 
 ### Step 10 — 回写 Issue
