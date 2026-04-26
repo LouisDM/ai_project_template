@@ -59,6 +59,13 @@ multica issue status <ISSUE_ID> blocked
 | Visual Design | 20% | 软指标 |
 | Code Quality | 10% | 软指标 |
 
+**Playwright 测试效率约束**：
+- **单 browser context 完成全部测试**：创建一个 context，所有验收项复用同一个 page，不要每个测试都 `chromium.launch()`
+- **登录状态复用**：先登录一次，后续测试直接复用已登录的 page/context，不要重复登录
+- **减少固定等待**：用 `locator.waitFor({ timeout: 5000 })` 替代 `page.waitForTimeout(3000)`，只在必要时等待
+- **不创建 explore_*.js**：所有探索尝试写在主测试脚本内，不要生成多个独立脚本文件
+- **总时长目标**：全部 Sprint 测试应在 10 分钟内完成，超时说明脚本效率需优化
+
 **失败判定**：
 - Feature Completeness 或 Functionality 未达标 → **整个 Sprint FAIL**
 - 紫渐变+白卡片默认样式 → 扣设计分

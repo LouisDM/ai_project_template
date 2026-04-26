@@ -46,7 +46,7 @@ export default function LoginPage() {
     >
       <Card style={{ width: 380 }}>
         <Title level={3} style={{ textAlign: 'center', color: '#1a56db' }}>
-          AI Project Template
+          留言板
         </Title>
         <Form layout="vertical" onFinish={handleLogin}>
           <Form.Item

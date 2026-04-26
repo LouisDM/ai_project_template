@@ -18,6 +18,11 @@ user_invocable: false
 8. **AI 调用必须降级** — LLM 失败返回空值，不抛异常阻断流程
 9. **空数据必须保护** — 数组/对象操作前检查 null/undefined/length
 10. **Contract 功能必须完整** — 筛选、排序、分页等辅助功能不能漏做
+11. **部署环境变量必须通过 shell 传入** — `FRONTEND_PORT`/`PROJECT_NAME` 需用 `sudo -E docker compose` 显式传递，不能仅写入 `.env.docker`
+12. **Admin 认证 API 必须独立实例** — admin 登录相关请求使用独立 `axios.create()`，避免通用 client 的 401 拦截器吞掉登录错误提示
+13. **登录错误必须显示提示** — 失败时调用 `message.error('账号或密码错误')` 或等效方法，禁止静默失败
+14. **项目身份必须随 Issue 更新** — `main.py` 的 `FastAPI(title=...)`、`index.html` 的 `<title>`、`AppLayout.tsx` 的应用名、`LoginPage.tsx` 的标题，都必须根据 Issue 标题更新，不能保留 "AI Project Template"
+15. **entrypoint.sh 必须包含管理员初始化** — 如果项目有 admin 功能，在 `entrypoint.sh` 的 `init()` 中通过 `INSERT INTO ... ON CONFLICT DO NOTHING` 创建默认管理员账号（从环境变量读取），确保首次启动即可登录
 
 ---
 

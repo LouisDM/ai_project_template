@@ -44,7 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }}
       >
         <Title level={4} style={{ margin: 0, marginRight: 32, color: '#1a56db' }}>
-          AI Project Template
+          留言板
         </Title>
         <Menu
           mode="horizontal"
